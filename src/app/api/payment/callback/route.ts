@@ -21,8 +21,10 @@ export async function POST(req: Request) {
     const transactionId = formData.get('transactionId');
     const providerReferenceId = formData.get('providerReferenceId'); // Real UPI Ref No
 
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+
     if (!transactionId || !merchantId) {
-      return NextResponse.redirect(new URL('/?payment=failed', req.url), { status: 303 });
+      return NextResponse.redirect(`${baseUrl}/donation/?payment=failed`, { status: 303 });
     }
 
     // Always do a Server-to-Server status check to prevent spoofing
@@ -115,7 +117,7 @@ export async function POST(req: Request) {
       }
 
       // Redirect to home with success param to trigger Thank You modal
-      return NextResponse.redirect(new URL(`/?payment=success&amount=${donation?.amount || 0}&txnId=${transactionId}`, req.url), { status: 303 });
+      return NextResponse.redirect(`${baseUrl}/donation/?payment=success&amount=${donation?.amount || 0}&txnId=${transactionId}`, { status: 303 });
     } else {
       // Payment Failed or Pending
       await supabase
@@ -123,11 +125,11 @@ export async function POST(req: Request) {
         .update({ state: 'failed' })
         .eq('upi_transaction_id', transactionId);
 
-      return NextResponse.redirect(new URL('/?payment=failed', req.url), { status: 303 });
+      return NextResponse.redirect(`${baseUrl}/donation/?payment=failed`, { status: 303 });
     }
 
   } catch (error) {
     console.error('Payment Callback Error:', error);
-    return NextResponse.redirect(new URL('/?payment=error', req.url), { status: 303 });
+    return NextResponse.redirect(`${baseUrl}/donation/?payment=error`, { status: 303 });
   }
 }
