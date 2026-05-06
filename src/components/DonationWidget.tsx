@@ -37,7 +37,7 @@ export default function DonationWidget({ onDonationComplete, levelName }: Donati
     setIsProcessing(true);
 
     try {
-      const response = await fetch('/api/payment/initiate', {
+      const response = await fetch('/donation/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
