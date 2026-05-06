@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID!;
 const SALT_KEY = process.env.PHONEPE_SALT_KEY!;
 const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1';
-const ENV = process.env.PHONEPE_ENV || 'PRODUCTION';
+const ENV = (process.env.PHONEPE_ENV || 'PRODUCTION').toUpperCase();
 
 // Use production URL based on your screenshot
 const PHONEPE_HOST_URL = ENV === 'PRODUCTION' 
