@@ -1,129 +1,59 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
+import { StandardCheckoutClient, Env } from '@phonepe-pg/pg-sdk-node';
 
-const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID!;
-const SALT_KEY = process.env.PHONEPE_SALT_KEY!;
-const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1';
-const ENV = (process.env.PHONEPE_ENV || 'PRODUCTION').toUpperCase();
+const CLIENT_ID = process.env.PHONEPE_CLIENT_ID || process.env.PHONEPE_MERCHANT_ID!;
+const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET || process.env.PHONEPE_SALT_KEY!;
+const CLIENT_VERSION = parseInt(process.env.PHONEPE_CLIENT_VERSION || '1');
+const ENVIRONMENT = (process.env.PHONEPE_ENV || 'PRODUCTION').toUpperCase();
+const PHONEPE_ENV = ENVIRONMENT === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
 
-const PHONEPE_HOST_URL = ENV === 'PRODUCTION' 
-  ? 'https://api.phonepe.com/apis/hermes' 
-  : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+export async function GET(req: Request) {
+  return handleCallback(req);
+}
 
-// PhonePe redirects back via POST
 export async function POST(req: Request) {
+  return handleCallback(req);
+}
+
+async function handleCallback(req: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
 
   try {
-    // PhonePe sends data via form URL encoded in POST redirect
-    const formData = await req.formData();
-    const code = formData.get('code');
-    const merchantId = formData.get('merchantId');
-    const transactionId = formData.get('transactionId');
-    const providerReferenceId = formData.get('providerReferenceId'); // Real UPI Ref No
+    const url = new URL(req.url);
+    let merchantOrderId = url.searchParams.get('id');
 
-    if (!transactionId || !merchantId) {
+    // PhonePe might send POST data when redirecting via form POST
+    if (!merchantOrderId && req.method === 'POST') {
+        try {
+            const formData = await req.formData();
+            merchantOrderId = formData.get('transactionId') as string || formData.get('merchantOrderId') as string;
+        } catch(e) {}
+    }
+
+    if (!merchantOrderId) {
       return NextResponse.redirect(`${baseUrl}/donation/?payment=failed`, { status: 303 });
     }
 
-    // Always do a Server-to-Server status check to prevent spoofing
-    const endpoint = `/pg/v1/status/${merchantId}/${transactionId}`;
-    const stringToHash = endpoint + SALT_KEY;
-    const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
-    const checksum = `${sha256}###${SALT_INDEX}`;
+    // 1. Initialize PhonePe SDK Client
+    const client = StandardCheckoutClient.getInstance(CLIENT_ID, CLIENT_SECRET, CLIENT_VERSION, PHONEPE_ENV);
 
-    const statusResponse = await fetch(`${PHONEPE_HOST_URL}${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-VERIFY': checksum,
-        'X-MERCHANT-ID': merchantId as string,
-      }
-    });
+    // 2. Fetch Order Status from PhonePe
+    const statusResponse = await client.getOrderStatus(merchantOrderId);
+    const state = statusResponse.state; // COMPLETED, FAILED, PENDING
 
-    const statusData = await statusResponse.json();
-
-    if (statusData.success && statusData.code === 'PAYMENT_SUCCESS') {
-      // 1. Fetch the pending donation
-      const { data: donation } = await supabase
+    if (state === 'COMPLETED') {
+      await supabase
         .from('donations')
-        .select('*')
-        .eq('upi_transaction_id', transactionId)
-        .single();
+        .update({ state: 'success' })
+        .eq('upi_transaction_id', merchantOrderId);
 
-      if (donation && donation.state === 'pending') {
-        // 2. Mark as success and save the real bank reference ID
-        await supabase
-          .from('donations')
-          .update({ 
-            state: 'success',
-            upi_transaction_id: providerReferenceId || transactionId 
-          })
-          .eq('id', donation.id);
-
-        // 3. Add to activity feed (Public display)
-        await supabase
-          .from('activity_feed')
-          .insert([{
-            message: `${donation.name || 'Anonymous'} donated ₹${donation.amount.toLocaleString('en-IN')}`,
-            amount: donation.amount,
-            event_type: 'donation'
-          }]);
-
-        // 4. Update Level Collected Amount and Auto-Progress
-        const { data: level } = await supabase.from('levels').select('*').eq('id', donation.level_id).single();
-        
-        if (level) {
-          const newCollected = Number(level.collected_amount) + Number(donation.amount);
-          
-          if (newCollected >= Number(level.target_amount)) {
-            // Level is Complete!
-            await supabase
-              .from('levels')
-              .update({ collected_amount: newCollected, status: 'complete' })
-              .eq('id', level.id);
-
-            // Add Level Complete to Activity Feed
-            await supabase
-              .from('activity_feed')
-              .insert([{
-                message: `Level ${level.level_number}: ${level.name} is complete! 🎉`,
-                event_type: 'level_complete'
-              }]);
-
-            // Find and Activate Next Level
-            const { data: nextLevel } = await supabase
-              .from('levels')
-              .select('*')
-              .eq('level_number', level.level_number + 1)
-              .single();
-
-            if (nextLevel) {
-              await supabase
-                .from('levels')
-                .update({ status: 'active' })
-                .eq('id', nextLevel.id);
-            }
-
-          } else {
-            // Normal update, not complete yet
-            await supabase
-              .from('levels')
-              .update({ collected_amount: newCollected })
-              .eq('id', level.id);
-          }
-        }
-      }
-
-      // Redirect to home with success param to trigger Thank You modal
-      return NextResponse.redirect(`${baseUrl}/donation/?payment=success&amount=${donation?.amount || 0}&txnId=${transactionId}`, { status: 303 });
+      return NextResponse.redirect(`${baseUrl}/donation/?payment=success`, { status: 303 });
     } else {
-      // Payment Failed or Pending
       await supabase
         .from('donations')
         .update({ state: 'failed' })
-        .eq('upi_transaction_id', transactionId);
+        .eq('upi_transaction_id', merchantOrderId);
 
       return NextResponse.redirect(`${baseUrl}/donation/?payment=failed`, { status: 303 });
     }

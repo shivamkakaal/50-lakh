@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
+import { StandardCheckoutClient, Env, StandardCheckoutPayRequest } from '@phonepe-pg/pg-sdk-node';
+import crypto from 'crypto';
 
-const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID!;
-const SALT_KEY = process.env.PHONEPE_SALT_KEY!;
-const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1';
-const ENV = (process.env.PHONEPE_ENV || 'PRODUCTION').toUpperCase();
-
-// Use production URL based on your screenshot
-const PHONEPE_HOST_URL = ENV === 'PRODUCTION' 
-  ? 'https://api.phonepe.com/apis/hermes' 
-  : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+const CLIENT_ID = process.env.PHONEPE_CLIENT_ID || process.env.PHONEPE_MERCHANT_ID!;
+const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET || process.env.PHONEPE_SALT_KEY!;
+const CLIENT_VERSION = parseInt(process.env.PHONEPE_CLIENT_VERSION || '1');
+const ENVIRONMENT = (process.env.PHONEPE_ENV || 'PRODUCTION').toUpperCase();
+const PHONEPE_ENV = ENVIRONMENT === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
 
 export async function POST(req: Request) {
   try {
@@ -20,23 +17,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    const merchantTransactionId = `MT_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const merchantUserId = `MUID_${Date.now()}`;
+    const merchantOrderId = `MT_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const amountInPaise = amount * 100;
 
-    // Get the base URL for the callback
-    // If you host this on premiumstorekathua.shop/donate, this needs to reflect that.
-    // For local testing, we use the host header or NEXT_PUBLIC_SITE_URL
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
-    const redirectUrl = `${baseUrl}/donation/api/payment/callback?id=${merchantTransactionId}`;
+    const redirectUrl = `${baseUrl}/donation/api/payment/callback?id=${merchantOrderId}`;
 
-    // 1. First, save a pending donation record in Supabase
-    // We will update this to "success" in the callback
+    // 1. Insert pending donation record in Supabase
     const { error: dbError } = await supabase.from('donations').insert([{
       amount,
       name: donorName || 'Anonymous',
       level_id: levelId,
-      upi_transaction_id: merchantTransactionId,
+      upi_transaction_id: merchantOrderId,
       message,
       state: 'pending',
       is_public: true
@@ -47,53 +39,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Database Error: ${dbError.message}` }, { status: 500 });
     }
 
-    // 2. Prepare PhonePe Payload
-    const payload = {
-      merchantId: MERCHANT_ID,
-      merchantTransactionId: merchantTransactionId,
-      merchantUserId: merchantUserId,
-      amount: amountInPaise,
-      redirectUrl: redirectUrl,
-      redirectMode: 'POST',
-      callbackUrl: redirectUrl, // S2S webhook (using same for simplicity, usually server endpoint)
-      mobileNumber: "9999999999", // Optional but sometimes required by PG
-      paymentInstrument: {
-        type: 'PAY_PAGE'
-      }
-    };
+    // 2. Initialize PhonePe SDK Client
+    const client = StandardCheckoutClient.getInstance(CLIENT_ID, CLIENT_SECRET, CLIENT_VERSION, PHONEPE_ENV);
 
-    const payloadString = JSON.stringify(payload);
-    const base64Payload = Buffer.from(payloadString).toString('base64');
-
-    // 3. Generate Checksum: SHA256(Base64Payload + "/pg/v1/pay" + saltKey) + "###" + saltIndex
-    const stringToHash = base64Payload + '/pg/v1/pay' + SALT_KEY;
-    const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
-    const checksum = `${sha256}###${SALT_INDEX}`;
-
-    // 4. Call PhonePe API
-    const response = await fetch(`${PHONEPE_HOST_URL}/pg/v1/pay`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-VERIFY': checksum,
-        'accept': 'application/json',
-      },
-      body: JSON.stringify({ request: base64Payload })
-    });
-
-    const responseData = await response.json().catch(() => null);
-
-    if (responseData && responseData.success && responseData.data?.instrumentResponse?.redirectInfo?.url) {
-      // Return the PhonePe payment page URL to the frontend
-      return NextResponse.json({ redirectUrl: responseData.data.instrumentResponse.redirectInfo.url });
+    // 3. Create Checkout Request
+    const request = StandardCheckoutPayRequest.builder()
+        .merchantOrderId(merchantOrderId)
+        .amount(amountInPaise)
+        .redirectUrl(redirectUrl)
+        .build();
+  
+    // 4. Initiate Payment
+    const response = await client.pay(request);
+    
+    if (response.redirectUrl) {
+        return NextResponse.json({ redirectUrl: response.redirectUrl });
     } else {
-      console.error('PhonePe API Error:', response.status, responseData);
-      const errorMsg = responseData ? JSON.stringify(responseData) : `HTTP ${response.status} ${response.statusText}`;
-      return NextResponse.json({ error: `PhonePe API Failed: ${errorMsg}` }, { status: 500 });
+        return NextResponse.json({ error: `PhonePe SDK Error: No redirect URL returned.` }, { status: 500 });
     }
 
   } catch (error: any) {
     console.error('Payment Initiation Error:', error);
-    return NextResponse.json({ error: `Server Error: ${error.message}` }, { status: 500 });
+    const errMsg = error.message || JSON.stringify(error);
+    return NextResponse.json({ error: `Server Error: ${errMsg}` }, { status: 500 });
   }
 }
