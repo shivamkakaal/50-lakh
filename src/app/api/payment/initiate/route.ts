@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     if (dbError) {
       console.error('Database Error:', dbError);
-      return NextResponse.json({ error: 'Failed to create donation record' }, { status: 500 });
+      return NextResponse.json({ error: `Database Error: ${dbError.message}` }, { status: 500 });
     }
 
     // 2. Prepare PhonePe Payload
@@ -88,11 +88,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ redirectUrl: responseData.data.instrumentResponse.redirectInfo.url });
     } else {
       console.error('PhonePe API Error:', responseData);
-      return NextResponse.json({ error: 'Failed to initiate payment with PhonePe' }, { status: 500 });
+      return NextResponse.json({ error: `PhonePe API Error: ${responseData.message || responseData.code || 'Unknown Error'}` }, { status: 500 });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Payment Initiation Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: `Server Error: ${error.message}` }, { status: 500 });
   }
 }

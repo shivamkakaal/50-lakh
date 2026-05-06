@@ -53,7 +53,7 @@ export default function DonationWidget({ onDonationComplete, levelName }: Donati
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
-        alert('Payment initiation failed. Please try again later.');
+        alert(`Payment Error: ${data.error || 'Please try again later.'}`);
         setIsProcessing(false);
       }
     } catch (error) {
