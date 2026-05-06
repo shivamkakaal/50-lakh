@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     // If you host this on premiumstorekathua.shop/donate, this needs to reflect that.
     // For local testing, we use the host header or NEXT_PUBLIC_SITE_URL
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
-    const redirectUrl = `${baseUrl}/api/payment/callback?id=${merchantTransactionId}`;
+    const redirectUrl = `${baseUrl}/donation/api/payment/callback?id=${merchantTransactionId}`;
 
     // 1. First, save a pending donation record in Supabase
     // We will update this to "success" in the callback
