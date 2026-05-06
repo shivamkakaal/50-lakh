@@ -13,6 +13,8 @@ const PHONEPE_HOST_URL = ENV === 'PRODUCTION'
 
 // PhonePe redirects back via POST
 export async function POST(req: Request) {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+
   try {
     // PhonePe sends data via form URL encoded in POST redirect
     const formData = await req.formData();
@@ -20,8 +22,6 @@ export async function POST(req: Request) {
     const merchantId = formData.get('merchantId');
     const transactionId = formData.get('transactionId');
     const providerReferenceId = formData.get('providerReferenceId'); // Real UPI Ref No
-
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
 
     if (!transactionId || !merchantId) {
       return NextResponse.redirect(`${baseUrl}/donation/?payment=failed`, { status: 303 });
