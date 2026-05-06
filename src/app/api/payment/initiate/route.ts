@@ -81,14 +81,15 @@ export async function POST(req: Request) {
       body: JSON.stringify({ request: base64Payload })
     });
 
-    const responseData = await response.json();
+    const responseData = await response.json().catch(() => null);
 
-    if (responseData.success && responseData.data?.instrumentResponse?.redirectInfo?.url) {
+    if (responseData && responseData.success && responseData.data?.instrumentResponse?.redirectInfo?.url) {
       // Return the PhonePe payment page URL to the frontend
       return NextResponse.json({ redirectUrl: responseData.data.instrumentResponse.redirectInfo.url });
     } else {
-      console.error('PhonePe API Error:', responseData);
-      return NextResponse.json({ error: `PhonePe API Error: ${responseData.message || responseData.code || 'Unknown Error'}` }, { status: 500 });
+      console.error('PhonePe API Error:', response.status, responseData);
+      const errorMsg = responseData ? JSON.stringify(responseData) : `HTTP ${response.status} ${response.statusText}`;
+      return NextResponse.json({ error: `PhonePe API Failed: ${errorMsg}` }, { status: 500 });
     }
 
   } catch (error: any) {
