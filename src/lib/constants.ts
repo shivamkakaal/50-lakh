@@ -52,34 +52,39 @@ export const SMART_SUGGESTIONS: SmartSuggestion[] = [
 ];
 
 // ─── Character Dialogue Library (PRD Section 8) ───
-export function getDialogue(amount: number): CharacterDialogue {
+export function getDialogue(amount: number): CharacterDialogue & { fatherImage: string } {
   if (amount >= 5000) {
     return {
       father: 'Aaj dil bhar aaya... aankh bhi.',
       son: 'Aapne aaj hamare ghar me ek diya jalaya.',
+      fatherImage: 'https://placehold.co/400x400/0B1D2A/FFD54F?text=Father+Tears'
     };
   }
   if (amount >= 1000) {
     return {
       father: 'Bhagwan aapka bhala kare.',
       son: 'Ye push bahut zaroori tha. Dil se shukriya.',
+      fatherImage: 'https://placehold.co/400x400/0B1D2A/FFD54F?text=Father+Heart'
     };
   }
   if (amount >= 500) {
     return {
       father: 'Aaj dil bhar aaya.',
       son: 'Aap backbone hain is mission ke.',
+      fatherImage: 'https://placehold.co/400x400/0B1D2A/FFD54F?text=Father+Heart'
     };
   }
   if (amount >= 50) {
     return {
       father: 'Beta… log humare saath hain.',
       son: 'Thank you. Aapne ek step aage badhaya.',
+      fatherImage: 'https://placehold.co/400x400/0B1D2A/FFD54F?text=Father+Looks+Up'
     };
   }
   return {
     father: '…',
     son: 'Shukriya. Har rupaya maayane rakhta hai.',
+    fatherImage: 'https://placehold.co/400x400/0B1D2A/FFD54F?text=Father+Nods'
   };
 }
 

@@ -256,11 +256,34 @@ export default function ThankYouModal({ amount, onClose, transactionId }: ThankY
           You donated <span className="mono" style={{ color: 'var(--gold)' }}>₹{amount.toLocaleString('en-IN')}</span>
         </p>
 
-        <div className="dialogue-bubble dialogue-father" style={{ textAlign: 'left' }}>
-          <span className="dialogue-label">👨‍🦳 Papa</span>
-          {dialogue.father}
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'flex-start' }}>
+          {/* Father Portrait */}
+          <div style={{ 
+            flexShrink: 0, 
+            width: '80px', 
+            height: '80px', 
+            borderRadius: '50%', 
+            overflow: 'hidden', 
+            border: '2px solid var(--gold)',
+            boxShadow: '0 0 15px rgba(255,213,79,0.2)',
+            animation: 'fade-in 1s ease-out'
+          }}>
+            {/* Using img instead of Next Image to avoid host config issues with placehold.co */}
+            <img 
+              src={dialogue.fatherImage} 
+              alt="Father Emotion" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
+          </div>
+          
+          {/* Father Dialogue */}
+          <div className="dialogue-bubble dialogue-father" style={{ textAlign: 'left', margin: 0, alignSelf: 'center', flex: 1, animation: 'fade-in 1.2s ease-out' }}>
+            <span className="dialogue-label">👨‍🦳 Papa</span>
+            {dialogue.father}
+          </div>
         </div>
-        <div className="dialogue-bubble dialogue-son" style={{ textAlign: 'left' }}>
+
+        <div className="dialogue-bubble dialogue-son" style={{ textAlign: 'left', marginBottom: '24px' }}>
           <span className="dialogue-label">👨 Beta</span>
           {dialogue.son}
         </div>
