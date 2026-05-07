@@ -43,12 +43,21 @@ async function handleCallback(req: Request) {
     const state = statusResponse.state; // COMPLETED, FAILED, PENDING
 
     if (state === 'COMPLETED') {
+      // Fetch amount to pass back to frontend for the ThankYouModal
+      const { data: donation } = await supabase
+        .from('donations')
+        .select('amount')
+        .eq('upi_transaction_id', merchantOrderId)
+        .single();
+        
+      const amount = donation?.amount || 0;
+
       await supabase
         .from('donations')
         .update({ state: 'success' })
         .eq('upi_transaction_id', merchantOrderId);
 
-      return NextResponse.redirect(`${baseUrl}/donation/?payment=success`, { status: 303 });
+      return NextResponse.redirect(`${baseUrl}/donation/?payment=success&amount=${amount}&txnId=${merchantOrderId}`, { status: 303 });
     } else {
       await supabase
         .from('donations')
