@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface LiveCounterProps {
   totalCollected: number;
@@ -58,6 +59,46 @@ export default function LiveCounter({ totalCollected, recentDonors }: LiveCounte
     }
   }, [recentDonors]);
 
+  // Live Viewers Presence Tracking
+  const [liveViewers, setLiveViewers] = useState(1);
+
+  useEffect(() => {
+    // Generate a random ID for this session
+    const sessionId = Math.random().toString(36).substring(2, 15);
+    
+    const roomOne = supabase.channel('online-users', {
+      config: {
+        presence: {
+          key: sessionId,
+        },
+      },
+    });
+
+    roomOne
+      .on('presence', { event: 'sync' }, () => {
+        const newState = roomOne.presenceState();
+        // Count total number of keys in the presence state object
+        setLiveViewers(Object.keys(newState).length || 1);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        // Optional: can handle joins if needed
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        // Optional: can handle leaves if needed
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          const presenceTrackStatus = await roomOne.track({
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(roomOne);
+    };
+  }, []);
+
   return (
     <>
       {/* Fixed Top-Right Live Counter */}
@@ -71,6 +112,20 @@ export default function LiveCounter({ totalCollected, recentDonors }: LiveCounte
             ₹{displayAmount.toLocaleString('en-IN')}
           </div>
           <div className="counter-label">collected</div>
+          <div style={{
+            marginTop: '8px',
+            background: 'rgba(255,255,255,0.05)',
+            padding: '4px 8px',
+            borderRadius: '10px',
+            fontSize: '10px',
+            color: 'rgba(255,255,255,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontFamily: 'var(--font-display)'
+          }}>
+            <span style={{ fontSize: '12px' }}>👁️</span> {liveViewers} viewing now
+          </div>
         </div>
       </div>
 

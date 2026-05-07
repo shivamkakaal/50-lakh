@@ -52,7 +52,24 @@ export default function SupporterGallery() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  if (supporters.length === 0) return null;
+  if (supporters.length === 0) {
+    return (
+      <section className="section" style={{ background: 'var(--navy)' }} id="supporter-gallery">
+        <div className="container" style={{ textAlign: 'center' }}>
+          <span className="section-label">Wall of Love</span>
+          <h2 className="section-title">Supporter Gallery</h2>
+          <div className="section-divider" style={{ margin: '0 auto' }} />
+          <div style={{ marginTop: '32px', padding: '32px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+            <p style={{ fontSize: '40px', margin: '0 0 16px' }}>📸</p>
+            <h3 style={{ fontSize: '20px', color: 'white', marginBottom: '8px' }}>Be the First!</h3>
+            <p style={{ color: 'rgba(255,255,255,0.5)', maxWidth: '400px', margin: '0 auto' }}>
+              Donate and share your selfie to appear on the Wall of Love. Show the world you support this mission.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="section" style={{ background: 'var(--navy)' }} id="supporter-gallery">
