@@ -11,7 +11,7 @@ const PHONEPE_ENV = ENVIRONMENT === 'PRODUCTION' ? Env.PRODUCTION : Env.SANDBOX;
 
 export async function POST(req: Request) {
   try {
-    const { amount, levelId, message, donorName } = await req.json();
+    const { amount, levelId, message, donorName, profession } = await req.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     const { error: dbError } = await supabase.from('donations').insert([{
       amount,
       name: donorName || 'Anonymous',
+      profession: profession || null,
       level_id: levelId,
       upi_transaction_id: merchantOrderId,
       message,

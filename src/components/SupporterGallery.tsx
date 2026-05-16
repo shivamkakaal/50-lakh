@@ -8,6 +8,8 @@ interface Supporter {
   amount: number;
   selfie_url: string;
   created_at: string;
+  profession?: string;
+  message?: string;
 }
 
 export default function SupporterGallery() {
@@ -17,7 +19,7 @@ export default function SupporterGallery() {
     async function fetchSupporters() {
       const { data, error } = await supabase
         .from('donations')
-        .select('name, amount, selfie_url, created_at')
+        .select('name, amount, selfie_url, created_at, profession, message')
         .not('selfie_url', 'is', null)
         .eq('state', 'success')
         .order('created_at', { ascending: false })
@@ -41,7 +43,9 @@ export default function SupporterGallery() {
               name: updated.name || 'Anonymous',
               amount: Number(updated.amount),
               selfie_url: updated.selfie_url,
-              created_at: updated.created_at
+              created_at: updated.created_at,
+              profession: updated.profession,
+              message: updated.message
             };
             return [newEntry, ...prev].slice(0, 5);
           });
@@ -93,7 +97,8 @@ export default function SupporterGallery() {
               gap: '8px',
               animation: `fadeInUp 0.5s ease forwards`,
               animationDelay: `${i * 0.1}s`,
-              opacity: 0
+              opacity: 0,
+              maxWidth: '140px'
             }}>
               <div style={{
                 width: '80px',
@@ -103,7 +108,8 @@ export default function SupporterGallery() {
                 border: '3px solid var(--gold)',
                 boxShadow: '0 0 20px rgba(255, 213, 79, 0.2)',
                 transition: 'transform 0.3s, box-shadow 0.3s',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                marginBottom: '4px'
               }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'scale(1.1)';
@@ -120,26 +126,65 @@ export default function SupporterGallery() {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </div>
-              <span style={{
-                fontSize: '12px',
-                color: 'white',
-                fontWeight: 600,
-                fontFamily: 'var(--font-display)',
-                maxWidth: '90px',
-                textAlign: 'center',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}>
-                {s.name || 'Anonymous'}
-              </span>
-              <span style={{
-                fontSize: '11px',
-                color: 'var(--gold)',
-                fontWeight: 500
-              }}>
-                ₹{s.amount.toLocaleString('en-IN')}
-              </span>
+
+              {s.profession && (
+                <span style={{
+                  fontSize: '9px',
+                  background: 'rgba(255,213,79,0.1)',
+                  color: 'var(--gold)',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,213,79,0.3)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '100%'
+                }}>
+                  {s.profession}
+                </span>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                <span style={{
+                  fontSize: '13px',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-display)',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%'
+                }}>
+                  {s.name || 'Anonymous'}
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  color: 'var(--gold)',
+                  fontWeight: 500
+                }}>
+                  ₹{s.amount.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {s.message && s.message !== 'Supporter' && (
+                <p style={{
+                  fontSize: '11px',
+                  color: 'rgba(255,255,255,0.6)',
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                  margin: '4px 0 0 0',
+                  lineHeight: '1.4',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
+                  "{s.message}"
+                </p>
+              )}
             </div>
           ))}
         </div>

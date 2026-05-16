@@ -57,7 +57,7 @@ export async function fetchTotalStats() {
   return { totalCollected, totalSupporters };
 }
 
-export async function insertDonation(amount: number, levelId: string, message: string) {
+export async function insertDonation(amount: number, levelId: string, message: string, profession?: string | null) {
   const txnId = `txn_${Date.now()}`;
   // 1. Insert Donation
   const { error: donationError } = await supabase
@@ -67,6 +67,7 @@ export async function insertDonation(amount: number, levelId: string, message: s
       level_id: levelId, 
       upi_transaction_id: txnId, // Mock txn ID for now
       message,
+      profession: profession || null,
       state: 'success' // Mark as success so it appears in the gallery
     }]);
 

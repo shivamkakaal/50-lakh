@@ -14,6 +14,9 @@ export default function DonationWidget({ onDonationComplete, levelName }: Donati
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState<{ amount: number; copy: string } | null>(null);
   const [donorName, setDonorName] = useState('');
+  const [requestShoutout, setRequestShoutout] = useState(false);
+  const [profession, setProfession] = useState('');
+  const [message, setMessage] = useState('');
 
   const activeAmount = selectedAmount || (customAmount ? parseInt(customAmount) : null);
 
@@ -43,7 +46,8 @@ export default function DonationWidget({ onDonationComplete, levelName }: Donati
         body: JSON.stringify({
           amount: activeAmount,
           levelId: 'a6bb1144-76d0-4378-ba92-4a9cea73b578',
-          message: 'Supporter',
+          message: requestShoutout ? message.trim() : 'Supporter',
+          profession: requestShoutout ? profession.trim() : null,
           donorName: donorName.trim() || 'Anonymous'
         })
       });
@@ -110,30 +114,66 @@ export default function DonationWidget({ onDonationComplete, levelName }: Donati
           </div>
         )}
 
-        {/* Donor Name Input */}
-        <div style={{ marginBottom: 16 }}>
-          <input 
-            type="text" 
-            placeholder="Aapka Naam (Optional)" 
-            value={donorName}
-            onChange={(e) => setDonorName(e.target.value)}
-            maxLength={40}
-            style={{ 
-              width: '100%', 
-              padding: '14px 16px', 
-              background: 'var(--navy)', 
-              border: '1px solid var(--border)', 
-              color: 'white', 
-              borderRadius: 'var(--radius-md)', 
-              fontSize: 15,
-              fontFamily: 'var(--font-body)',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--gold)'}
-            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-          />
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 6, marginBottom: 0 }}>Naam nahi doge toh &quot;Anonymous Supporter&quot; dikhega</p>
+        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-md)', marginBottom: 24, border: '1px solid var(--border)' }}>
+          {/* Donor Name Input */}
+          <div style={{ marginBottom: 12 }}>
+            <input 
+              type="text" 
+              placeholder="Aapka Naam (Optional)" 
+              value={donorName}
+              onChange={(e) => setDonorName(e.target.value)}
+              maxLength={40}
+              style={{ 
+                width: '100%', 
+                padding: '14px 16px', 
+                background: 'var(--navy)', 
+                border: '1px solid var(--border)', 
+                color: 'white', 
+                borderRadius: '8px', 
+                fontSize: 15,
+                outline: 'none',
+              }}
+              onFocus={(e) => e.target.style.borderColor = 'var(--gold)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+            />
+          </div>
+
+          {/* Shoutout Toggle */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>
+            <input 
+              type="checkbox" 
+              checked={requestShoutout} 
+              onChange={(e) => setRequestShoutout(e.target.checked)} 
+              style={{ width: 16, height: 16, accentColor: 'var(--gold)' }}
+            />
+            📢 Request a Shoutout on the Wall of Love
+          </label>
+
+          {/* Shoutout Fields */}
+          {requestShoutout && (
+            <div style={{ marginTop: 16, animation: 'fade-in 0.3s ease-out' }}>
+              <input 
+                type="text" 
+                placeholder="Aap kya karte hain? (e.g. Content Creator, Student)" 
+                value={profession}
+                onChange={(e) => setProfession(e.target.value)}
+                maxLength={30}
+                style={{ 
+                  width: '100%', padding: '12px 14px', background: 'var(--navy)', border: '1px solid var(--border)', color: 'white', borderRadius: '8px', fontSize: 14, marginBottom: 12, outline: 'none'
+                }}
+              />
+              <textarea 
+                placeholder="Short Shoutout Message (Max 100 chars)" 
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                maxLength={100}
+                rows={2}
+                style={{ 
+                  width: '100%', padding: '12px 14px', background: 'var(--navy)', border: '1px solid var(--border)', color: 'white', borderRadius: '8px', fontSize: 14, outline: 'none', resize: 'none'
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <button className={`btn btn-gold btn-full ${activeAmount && !isProcessing ? 'animate-pulse-glow' : ''}`} onClick={handleDonate} disabled={!activeAmount || isProcessing} style={{ fontSize: 18, padding: '16px 32px', opacity: activeAmount ? 1 : 0.4, cursor: activeAmount && !isProcessing ? 'pointer' : 'not-allowed' }}>
