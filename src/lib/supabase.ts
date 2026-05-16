@@ -58,19 +58,21 @@ export async function fetchTotalStats() {
 }
 
 export async function insertDonation(amount: number, levelId: string, message: string) {
+  const txnId = `txn_${Date.now()}`;
   // 1. Insert Donation
   const { error: donationError } = await supabase
     .from('donations')
     .insert([{ 
       amount, 
       level_id: levelId, 
-      upi_transaction_id: `txn_${Date.now()}`, // Mock txn ID for now
-      message 
+      upi_transaction_id: txnId, // Mock txn ID for now
+      message,
+      state: 'success' // Mark as success so it appears in the gallery
     }]);
 
   if (donationError) {
     console.error('Error inserting donation:', donationError);
-    return false;
+    return null;
   }
 
   // 2. Insert Activity Feed
@@ -83,8 +85,6 @@ export async function insertDonation(amount: number, levelId: string, message: s
     }]);
 
   // 3. Update Level Collected Amount
-  // Note: In production, this should ideally be handled by a Supabase Database Trigger
-  // But for MVP, we'll increment it from the client (less secure but works for demo).
   const { data: level } = await supabase.from('levels').select('collected_amount').eq('id', levelId).single();
   if (level) {
     await supabase
@@ -93,5 +93,5 @@ export async function insertDonation(amount: number, levelId: string, message: s
       .eq('id', levelId);
   }
 
-  return true;
+  return txnId;
 }

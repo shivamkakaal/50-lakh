@@ -112,12 +112,15 @@ function HomeContent() {
   }
 
   async function handleDonationComplete(amount: number) {
+    // Attempt to save to Supabase and get the transaction ID
+    const txnId = await insertDonation(amount, currentLevel.id, "Supporter");
+    
     // Show thank you immediately for good UX
     setLastDonation(amount);
+    if (txnId) {
+      setLastTxnId(txnId);
+    }
     setShowThankYou(true);
-    
-    // Attempt to save to Supabase
-    await insertDonation(amount, currentLevel.id, "Supporter");
   }
 
   if (isLoading) {
