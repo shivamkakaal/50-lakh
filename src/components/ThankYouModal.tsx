@@ -250,46 +250,77 @@ export default function ThankYouModal({ amount, onClose, transactionId }: ThankY
         ) : (
           // --- STANDARD THANK YOU UI ---
           <>
-            <p style={{ fontSize: 48, marginBottom: 16 }}>🙏</p>
-            <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>Shukriya!</h2>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>
-          You donated <span className="mono" style={{ color: 'var(--gold)' }}>₹{amount.toLocaleString('en-IN')}</span>
-        </p>
+            {/* Animated Emotional Hug Scene */}
+            <div style={{ position: 'relative', height: '110px', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '16px', marginTop: '8px' }}>
+              
+              {/* Floating Hearts / Sparkles Burst */}
+              <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 0 }}>
+                {[...Array(6)].map((_, i) => {
+                  const items = ['❤️', '💖', '✨'];
+                  return (
+                    <div key={i} style={{
+                      position: 'absolute',
+                      fontSize: `${Math.random() * 12 + 14}px`,
+                      animation: `floatHeart ${1.5 + Math.random()}s ease-out forwards`,
+                      animationDelay: `${0.6 + Math.random() * 0.4}s`,
+                      opacity: 0,
+                      left: `${(Math.random() - 0.5) * 80}px`
+                    }}>
+                      {items[Math.floor(Math.random() * items.length)]}
+                    </div>
+                  );
+                })}
+              </div>
 
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'flex-start' }}>
-          {/* Father Portrait */}
-          <div style={{ 
-            flexShrink: 0, 
-            width: '80px', 
-            height: '80px', 
-            borderRadius: '50%', 
-            overflow: 'hidden', 
-            border: '2px solid var(--gold)',
-            boxShadow: '0 0 15px rgba(255,213,79,0.2)',
-            animation: 'fade-in 1s ease-out'
-          }}>
-            {/* Using img instead of Next Image to avoid host config issues with placehold.co */}
-            <img 
-              src={dialogue.fatherImage} 
-              alt="Father Emotion" 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-            />
-          </div>
-          
-          {/* Father Dialogue */}
-          <div className="dialogue-bubble dialogue-father" style={{ textAlign: 'left', margin: 0, alignSelf: 'center', flex: 1, animation: 'fade-in 1.2s ease-out' }}>
-            <span className="dialogue-label">👨‍🦳 Papa</span>
-            {dialogue.father}
-          </div>
-        </div>
+              {/* Son Avatar */}
+              <div style={{ 
+                width: '70px', height: '70px', borderRadius: '50%', background: 'var(--navy-light)', border: '2px solid rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px',
+                animation: 'slideHugLeft 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                animationDelay: '0.2s',
+                opacity: 0,
+                zIndex: 1,
+                boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                position: 'absolute', left: '50%', marginLeft: '-35px'
+              }}>
+                👨
+              </div>
 
-        <div className="dialogue-bubble dialogue-son" style={{ textAlign: 'left', marginBottom: '24px' }}>
-          <span className="dialogue-label">👨 Beta</span>
-          {dialogue.son}
-        </div>
+              {/* Father Avatar */}
+              <div style={{ 
+                width: '76px', height: '76px', borderRadius: '50%', background: 'var(--gold)', border: '3px solid #FFF',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px',
+                animation: 'slideHugRight 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                animationDelay: '0.2s',
+                opacity: 0,
+                zIndex: 2,
+                boxShadow: 'var(--shadow-gold)',
+                position: 'absolute', left: '50%', marginLeft: '-38px'
+              }}>
+                👨‍🦳
+              </div>
+            </div>
 
-        {/* Selfie Section */}
-        <div style={{ marginTop: 20, padding: '16px', background: 'rgba(255,213,79,0.05)', borderRadius: '12px', border: '1px dashed rgba(255,213,79,0.2)' }}>
+            <h2 className="animate-slideUp delay-300" style={{ color: 'var(--gold)', marginBottom: 8 }}>Shukriya!</h2>
+            <p className="animate-slideUp delay-300" style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>
+              You donated <span className="mono" style={{ color: 'var(--gold)' }}>₹{amount.toLocaleString('en-IN')}</span>
+            </p>
+
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
+              {/* Father Dialogue */}
+              <div className="dialogue-bubble dialogue-father animate-slideUp delay-400" style={{ textAlign: 'left', margin: 0, flex: 1 }}>
+                <span className="dialogue-label">👨‍🦳 Papa</span>
+                {dialogue.father}
+              </div>
+            </div>
+
+            <div className="dialogue-bubble dialogue-son animate-slideUp delay-500" style={{ textAlign: 'left', marginBottom: '24px' }}>
+              <span className="dialogue-label">👨 Beta</span>
+              {dialogue.son}
+            </div>
+
+            {/* Selfie Section */}
+            <div className="animate-slideUp delay-500" style={{ marginTop: 20, padding: '16px', background: 'rgba(255,213,79,0.05)', borderRadius: '12px', border: '1px dashed rgba(255,213,79,0.2)' }}>
           {!selfiePreview ? (
             <>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 12, textAlign: 'center' }}>
@@ -345,19 +376,19 @@ export default function ThankYouModal({ amount, onClose, transactionId }: ThankY
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-          <button 
-            className="btn btn-outline btn-full" 
-            onClick={generateStory}
-            style={{ flex: 1, padding: '14px 16px', fontSize: 14 }}
-          >
-            📸 Create Story
-          </button>
-          <button className="btn btn-gold btn-full" onClick={onClose} style={{ flex: 1 }}>
-            Continue →
-          </button>
-        </div>
-        </>
+            <div className="animate-slideUp delay-500" style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+              <button 
+                className="btn btn-outline btn-full" 
+                onClick={generateStory}
+                style={{ flex: 1, padding: '14px 16px', fontSize: 14 }}
+              >
+                📸 Create Story
+              </button>
+              <button className="btn btn-gold btn-full" onClick={onClose} style={{ flex: 1 }}>
+                Continue →
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

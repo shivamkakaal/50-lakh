@@ -666,6 +666,34 @@ p {
   50% { transform: translateY(-6px); }
 }
 
+@keyframes slideHugLeft {
+  0% { transform: translateX(-40px); opacity: 0; }
+  100% { transform: translateX(15px); opacity: 1; }
+}
+
+@keyframes slideHugRight {
+  0% { transform: translateX(40px); opacity: 0; }
+  100% { transform: translateX(-15px); opacity: 1; }
+}
+
+@keyframes floatHeart {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  20% { opacity: 1; transform: translateY(-15px) scale(1.2); }
+  100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(229, 62, 62, 1); box-shadow: 0 0 10px rgba(229, 62, 62, 0.4); }
+  50% { border-color: rgba(229, 62, 62, 0.3); box-shadow: 0 0 25px rgba(229, 62, 62, 0.1); }
+}
+
+/* ─── FAILED STATE (PRD Emotional Change) ─── */
+body.failed-state {
+  filter: grayscale(0.5) contrast(1.1) brightness(0.85);
+  background-color: #03080c; /* darker navy */
+  transition: filter 1s ease, background-color 1s ease;
+}
+
 .animate-fadeIn { animation: fadeIn 0.6s ease-out both; }
 .animate-slideUp { animation: slideUp 0.6s ease-out both; }
 .animate-pulse-glow { animation: pulse-glow 2s infinite; }

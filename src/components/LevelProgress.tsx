@@ -13,10 +13,20 @@ interface LevelProgressProps {
 export default function LevelProgress({ level }: LevelProgressProps) {
   const [isRescueMode, setIsRescueMode] = useState(false);
   const [isFailed, setIsFailed] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   const phaseColor = PHASE_COLORS[level.phase] || 'var(--gold)';
   const remaining = level.target_amount - level.collected_amount;
   const isComplete = remaining <= 0;
+
+  useEffect(() => {
+    if (isFailed) {
+      document.body.classList.add('failed-state');
+    } else {
+      document.body.classList.remove('failed-state');
+    }
+    return () => document.body.classList.remove('failed-state');
+  }, [isFailed]);
 
   useEffect(() => {
     if (isComplete) {
@@ -50,6 +60,36 @@ export default function LevelProgress({ level }: LevelProgressProps) {
 
   // If in rescue mode, override phase color with alert red. If failed, use muted gray.
   const activeColor = isFailed ? '#718096' : (isRescueMode ? '#E53E3E' : phaseColor);
+
+  async function handleRecovery(type: 'extend' | 'restart') {
+    setIsRecovering(true);
+    try {
+      // Calculate new deadline based on type
+      // Extend: adds 50% more time (for MVP, let's add 2 days)
+      // Restart: fresh 5 days
+      const daysToAdd = type === 'extend' ? 2 : 5;
+      const newDeadline = new Date();
+      newDeadline.setDate(newDeadline.getDate() + daysToAdd);
+
+      // Attempt to update the level deadline
+      const { error } = await supabase
+        .from('levels')
+        .update({ deadline: newDeadline.toISOString() })
+        .eq('id', level.id);
+
+      if (error) {
+        console.error('Failed to recover level:', error);
+        alert('Could not update level. Admin needs to allow public recovery or do it from Admin Panel.');
+      } else {
+        // Success, local state will update via realtime subscription in page.tsx
+        alert(type === 'extend' ? 'Level extended! The journey continues.' : 'Level restarted with fresh energy!');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsRecovering(false);
+    }
+  }
 
   return (
     <section className="section">
@@ -166,31 +206,78 @@ export default function LevelProgress({ level }: LevelProgressProps) {
             )}
           </div>
 
-          {/* Countdown */}
-          <div style={{
-            background: 'rgba(0,0,0,0.2)',
-            borderRadius: 'var(--radius-md)',
-            padding: '16px 12px',
-          }}>
-            <p style={{
+          {/* Countdown or Recovery Options */}
+          {isFailed ? (
+            <div style={{
+              marginTop: 24,
+              padding: '24px',
+              background: 'rgba(0,0,0,0.4)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid rgba(255,255,255,0.05)',
               textAlign: 'center',
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.3)',
-              fontFamily: 'var(--font-mono)',
-              letterSpacing: 1,
-              textTransform: 'uppercase',
-              marginBottom: 8,
+              animation: 'fade-in 1s ease-out'
             }}>
-              {isFailed ? '⏰ Time Passed' : '⏰ Time Remaining'}
-            </p>
-            {isFailed ? (
-              <div style={{ textAlign: 'center', color: '#A0AEC0', fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 'bold' }}>
-                00 : 00 : 00
+              <h4 style={{ color: 'white', marginBottom: 16, fontSize: 18 }}>The story doesn&apos;t end here.</h4>
+              <div style={{ display: 'flex', gap: 12, flexDirection: 'column' }}>
+                <button 
+                  onClick={() => handleRecovery('extend')}
+                  disabled={isRecovering}
+                  style={{
+                    padding: '14px',
+                    background: 'var(--gold)',
+                    color: 'var(--navy)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: 15,
+                    cursor: isRecovering ? 'not-allowed' : 'pointer',
+                    opacity: isRecovering ? 0.7 : 1
+                  }}
+                >
+                  ⏳ Extend This Level (Add Time)
+                </button>
+                <button 
+                  onClick={() => handleRecovery('restart')}
+                  disabled={isRecovering}
+                  style={{
+                    padding: '14px',
+                    background: 'transparent',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: 15,
+                    cursor: isRecovering ? 'not-allowed' : 'pointer',
+                    opacity: isRecovering ? 0.7 : 1
+                  }}
+                >
+                  🔄 Restart Level (Fresh Energy)
+                </button>
               </div>
-            ) : (
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 16, marginBottom: 0 }}>
+                Progress is kept safe. We carry it forward.
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: 'var(--radius-md)',
+              padding: '16px 12px',
+            }}>
+              <p style={{
+                textAlign: 'center',
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.3)',
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}>
+                ⏰ Time Remaining
+              </p>
               <CountdownTimer deadline={level.deadline} />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
