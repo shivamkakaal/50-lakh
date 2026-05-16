@@ -5,6 +5,7 @@ import CountdownTimer from './CountdownTimer';
 import { PHASE_COLORS } from '@/lib/constants';
 import type { Level } from '@/lib/types';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface LevelProgressProps {
   level: Level;
