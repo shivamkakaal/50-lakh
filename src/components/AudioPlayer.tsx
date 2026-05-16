@@ -8,7 +8,18 @@ export default function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Auto-play on first user interaction (click/touch anywhere on page)
+    // Try to auto-play immediately on mount
+    if (audioRef.current && !userPaused && !isPlaying) {
+      audioRef.current.volume = 0.4;
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {
+          // Browser blocked autoplay. We will rely on the interaction fallback.
+          console.log("Autoplay blocked by browser. Waiting for user interaction.");
+        });
+    }
+
+    // Fallback: Auto-play on first user interaction (click/touch anywhere on page)
     function handleFirstInteraction() {
       if (audioRef.current && !userPaused && !isPlaying) {
         audioRef.current.volume = 0.4;
@@ -50,6 +61,7 @@ export default function AudioPlayer() {
         src="/Papa Meri Jaan Animal 128 Kbps.mp3" 
         loop 
         preload="auto"
+        autoPlay
       />
       
       <button 
