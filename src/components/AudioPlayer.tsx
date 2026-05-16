@@ -58,7 +58,7 @@ export default function AudioPlayer() {
     <>
       <audio 
         ref={audioRef} 
-        src="/Papa Meri Jaan Animal 128 Kbps.mp3" 
+        src="/papa-song.mp3" 
         loop 
         preload="auto"
         autoPlay
